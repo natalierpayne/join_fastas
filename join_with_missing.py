@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Author : Ken Youens-Clark <kyclark@gmail.com>
+Authors: Ken Youens-Clark <kyclark@gmail.com>,
+         Natalie Mercer <nataliermercer@email.arizona.edu>
 Date   : 2021-10-20
 Purpose: Join sequences/SNPs
 """
@@ -16,6 +17,7 @@ from typing import List, NamedTuple, TextIO
 class Args(NamedTuple):
     """ Command-line arguments """
     files: List[TextIO]
+    samples: TextIO
     outfile: TextIO
 
 
@@ -32,12 +34,13 @@ def get_args() -> Args:
                         metavar='FILE',
                         nargs='+',
                         type=argparse.FileType('rt'))
-    
+
     parser.add_argument('-s',
                         '--samples',
                         help='File containing list of all samples',
-                        metavar='Samples_FILE',
-                        type=argparse.FileType('rt'))
+                        metavar='Samples FILE',
+                        type=argparse.FileType('rt'),
+                        required=True)
 
     parser.add_argument('-o',
                         '--outfile',
@@ -48,10 +51,7 @@ def get_args() -> Args:
 
     args = parser.parse_args()
 
-    if not args.samples:
-        parser.error('Please provide list of all sample names with -s for fasta headings.')
-
-    return args
+    return Args(args.files, args.samples, args.outfile)
 
 
 # --------------------------------------------------
@@ -59,21 +59,19 @@ def main() -> None:
     """ Make a jazz noise here """
 
     args = get_args()
-
-    samples = []
-    for line in args.samples:
-        samples.append(line.rstrip())
-
+    samples = list(map(str.rstrip, args.samples))
     seqs = defaultdict(list)
-    
+
     for fh in args.files:
         seq_ids = []
         for rec in SeqIO.parse(fh, 'fasta'):
             seq_id = re.sub('^uce-\d+_', '', rec.id)
             if seq_id not in samples:
-                sys.exit(f'Error: Sample "{seq_id}" is not in {args.samples.name}.')
+                sys.exit(
+                    f'Error: Sample "{seq_id}" is not in {args.samples.name}.')
             seq_ids.append(seq_id)
             seqs[seq_id].append(str(rec.seq))
+
         for sample in samples:
             if sample not in seq_ids:
                 seqs[sample].append('-')
