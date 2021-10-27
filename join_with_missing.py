@@ -71,7 +71,7 @@ def main() -> None:
         for rec in SeqIO.parse(fh, 'fasta'):
             seq_id = re.sub('^uce-\d+_', '', rec.id)
             if seq_id not in samples:
-                sys.exit(f'Error: Sample "{seq_id}"" is not in {args.samples.name}.')
+                sys.exit(f'Error: Sample "{seq_id}" is not in {args.samples.name}.')
             seq_ids.append(seq_id)
             seqs[seq_id].append(str(rec.seq))
         for sample in samples:
